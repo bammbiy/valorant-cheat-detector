@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VALOSCAN</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+<div class="shell">
+
+<header class="titlebar">
+  <div class="tb-logo">VALO<b>SCAN</b></div>
+  <div class="tb-div"></div>
+  <div class="tb-sub">cheat detection engine v1.0</div>
+  <div class="tb-right"><div class="led"></div><span id="modeTag">demo mode</span></div>
+</header>
+
+<nav class="sidebar">
+  <div class="sb-section">분석</div>
+  <button class="nav-btn on" onclick="goSearch()">
+    <svg class="nb-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="3.5"/><path d="M9 9l2.5 2.5"/></svg>
+    플레이어 검색
+  </button>
+  <button class="nav-btn" id="nav-result" style="display:none" onclick="goResult()">
+    <svg class="nb-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M2 7h7M2 10h5"/></svg>
+    분석 결과
+  </button>
+  <div class="sb-section" style="margin-top:6px">엔진</div>
+  <div class="nav-btn dim">
+    <svg class="nb-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10l3-5 3 3 2-4 2 6"/></svg>
+    통계 이상 탐지
+  </div>
+  <div class="nav-btn dim">
+    <svg class="nb-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="7,1 13,12 1,12"/><line x1="7" y1="5" x2="7" y2="8"/><circle cx="7" cy="10.5" r=".7" fill="currentColor"/></svg>
+    물리 불가능 감지
+  </div>
+  <div class="nav-btn dim">
+    <svg class="nb-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="10" height="7" rx="1.5"/><path d="M5 4V3a2 2 0 014 0v1"/></svg>
+    ML 앙상블
+  </div>
+  <div class="sb-spacer"></div>
+  <div class="sb-foot">build 2025.04<br>riot api v1</div>
+</nav>
+
+<main class="main">
+
+  <!-- search -->
+  <div class="pg on" id="pg-search">
+    <div class="search-wrap">
+      <div class="pg-eye">// player lookup</div>
+      <div class="pg-title">닉네임 입력</div>
+      <div class="pg-sub">발로란트 전적을 분석해 핵 의심도를 0–100%로 산출합니다.<br>통계 이상 · 물리 불가능 · ML 앙상블 · 누적 신뢰도 결합.</div>
+      <div class="igroup">
+        <div class="ig-pre">name#tag</div>
+        <input class="ig-inp" id="searchInput" type="text" placeholder="ShadowX#KR1" maxlength="60" autocomplete="off" spellcheck="false">
+        <select class="ig-sel" id="regionSel">
+          <option value="kr">KR</option><option value="ap">AP</option>
+          <option value="eu">EU</option><option value="na">NA</option>
+        </select>
+        <button class="ig-btn" onclick="doSearch()">RUN</button>
+      </div>
+      <div class="qpicks">
+        <span class="qp-lbl">demo —</span>
+        <button class="qp-chip" onclick="loadDemo('ShadowX#KR1')">ShadowX#KR1</button>
+        <button class="qp-chip" onclick="loadDemo('ProGamer#KR2')">ProGamer#KR2</button>
+        <button class="qp-chip" onclick="loadDemo('SnipeGod#KR3')">SnipeGod#KR3</button>
+      </div>
+      <div class="info-grid">
+        <div class="ig-cell"><div class="igc-l">모델 정확도</div><div class="igc-v">96.3<span style="font-size:12px">%</span></div><div class="igc-s">테스트셋 기준</div></div>
+        <div class="ig-cell"><div class="igc-l">학습 샘플</div><div class="igc-v">2.4M</div><div class="igc-s">정상+핵 확인</div></div>
+        <div class="ig-cell"><div class="igc-l">오탐률</div><div class="igc-v">0.8<span style="font-size:12px">%</span></div><div class="igc-s">false positive</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- loading -->
+  <div class="loading-wrap" id="loading">
+    <div class="ld-head">
+      <div class="ld-spin"></div>
+      <div class="ld-txt" id="ld-txt">initializing...</div>
+    </div>
+    <div class="log-list" id="log-list"></div>
+  </div>
+
+  <!-- result -->
+  <div class="result-pg" id="pg-result">
+    <div class="r-topbar">
+      <div class="r-player">
+        <div class="r-avatar" id="r-avatar"></div>
+        <div>
+          <div class="r-name" id="r-name"></div>
+          <div class="r-meta">
+            <span id="r-meta"></span>
+            <span class="demo-badge" id="demo-badge">DEMO</span>
+          </div>
+        </div>
+      </div>
+      <div class="r-verdict">
+        <div class="r-pct" id="r-pct"></div>
+        <div class="r-vlbl" id="r-vlbl"></div>
+      </div>
+    </div>
+
+    <div class="r-grid">
+      <div class="r-main">
+        <div class="sec">stat</div>
+        <div class="stat-row" id="stat-row"></div>
+
+        <div class="sec">subsystem scores</div>
+        <div class="sys-grid" id="sys-grid"></div>
+
+        <div class="sec">time series</div>
+        <div class="chart-pair">
+          <div class="chart-c">
+            <div class="chart-lbl">headshot % / match</div>
+            <div class="chart-h"><canvas id="hsChart" role="img" aria-label="헤드샷율 추이">HS 추이</canvas></div>
+          </div>
+          <div class="chart-c">
+            <div class="chart-lbl">suspicion % / match</div>
+            <div class="chart-h"><canvas id="suspChart" role="img" aria-label="의심도 추이">의심도 추이</canvas></div>
+          </div>
+        </div>
+
+        <div class="sec">flags</div>
+        <div class="flag-block" id="flag-block"></div>
+
+        <div class="sec">match history</div>
+        <table class="match-tbl">
+          <thead><tr><th>map</th><th>agent</th><th>k/d/a</th><th>hs%</th><th>adr</th><th>susp</th></tr></thead>
+          <tbody id="match-body"></tbody>
+        </table>
+
+        <div class="api-note">
+          <div class="an-head">// riot api 연동</div>
+          <div class="an-body">
+            현재 demo 데이터로 동작합니다.<br>
+            실전: <code>cp .env.example .env</code> → API 키 입력 →<br>
+            <code>python main.py</code> → <code>localhost:8000</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="r-side">
+        <div class="side-card">
+          <div class="sc-head">ml ensemble</div>
+          <div class="sc-body" id="ml-votes"></div>
+        </div>
+        <div class="side-card">
+          <div class="sc-head">trust score</div>
+          <div class="sc-body">
+            <div class="trust-center">
+              <div class="trust-num" id="trust-num"></div>
+              <div class="trust-lbl">/ 100</div>
+            </div>
+            <div class="trust-bg"><div class="trust-fill" id="trust-fill"></div></div>
+            <div class="trust-hint" id="trust-hint"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>
