@@ -63,3 +63,34 @@ class TestAnalyzerDemoMode:
         assert r.status_code == 200
         assert r.json()["status"] == "ok"
         assert r.json()["demo_mode"] is True
+
+    async def test_games_endpoint_exposes_overwatch_research_status(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/api/games")
+        assert r.status_code == 200
+        games = {item["id"]: item for item in r.json()}
+        assert games["valorant"]["status"] == "available"
+        assert games["overwatch"]["status"] == "research"
+
+    async def test_overwatch_analysis_is_explicitly_unavailable(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/api/analyze/kr/ShadowX/KR1?game=overwatch")
+        assert r.status_code == 501
+
+    async def test_high_risk_analysis_creates_review_alert(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.get("/api/analyze/kr/ShadowX/KR1")
+            r = await client.get("/api/alerts?game=valorant")
+        assert r.status_code == 200
+        assert any(alert["player"] == "ShadowX#KR1" for alert in r.json())
+
+    async def test_quality_and_model_endpoints_expose_limitations(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            quality_response = await client.get("/api/quality")
+            model_response = await client.get("/api/model")
+        assert quality_response.status_code == 200
+        assert quality_response.json()["status"] == "prototype"
+        assert quality_response.json()["limitations"]
+        assert model_response.status_code == 200
+        assert len(model_response.json()["signals"]) >= 3
+        assert model_response.json()["safeguards"]

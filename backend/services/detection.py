@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import math
 import statistics
@@ -166,6 +168,7 @@ def _logistic_score(avg_hs: float, avg_kda: float) -> float:
         (avg_hs  - 0.50) * 2.9
         + (avg_kda - 1.50) * 0.38
         + (1.2 if avg_hs > cfg.hs_physics_hard and avg_kda > 5 else 0)
+        + cfg.ml_logit_bias
     )
     return 1 / (1 + math.exp(-logit))
 
@@ -194,6 +197,20 @@ def run_ml_ensemble(matches: list[MatchData]) -> tuple[float, list[MLVote]]:
     return round(ensemble, 4), votes
 
 
+def compute_evidence_confidence(
+    matches: list[MatchData], stat: float, physics: float, ml: float
+) -> int:
+    """표본 수와 독립 신호 일치도를 합쳐 보수적인 신뢰도를 계산한다."""
+    if not matches:
+        return cfg.confidence_min
+
+    sample_factor = min(len(matches) / cfg.confidence_full_sample, 1.0)
+    signal_spread = max(stat, physics, ml) - min(stat, physics, ml)
+    agreement = 1.0 - min(signal_spread, 1.0)
+    raw = cfg.confidence_min + 45 * sample_factor + 15 * agreement
+    return int(max(cfg.confidence_min, min(cfg.confidence_max, raw)))
+
+
 # ── trust score ───────────────────────────────────────────────────────────────
 
 def compute_trust(matches: list[MatchData]) -> int:
@@ -212,7 +229,7 @@ def compute_trust(matches: list[MatchData]) -> int:
         penalty += cfg.trust_hs_hard_penalty
     elif avg_hs > cfg.trust_hs_soft_threshold:
         penalty += cfg.trust_hs_soft_penalty
-    if win_rate > cfg.trust_winrate_alert:
+    if win_rate > cfg.trust_winrate_alert and avg_hs > cfg.trust_hs_soft_threshold:
         penalty += cfg.trust_winrate_penalty
 
     return int(max(cfg.trust_min, min(cfg.trust_max, base - penalty + cfg.trust_base_bonus)))

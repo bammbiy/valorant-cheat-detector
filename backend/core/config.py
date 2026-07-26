@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import logging
 from functools import lru_cache
+from typing import Dict, List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,10 +17,10 @@ class Settings(BaseSettings):
 
     # Riot routing — in .env pass as JSON:
     #   REGION_PLATFORM='{"kr":"kr","ap":"ap","eu":"eu","na":"na1"}'
-    region_platform: dict[str, str] = {
+    region_platform: Dict[str, str] = {
         "kr": "kr", "ap": "ap", "eu": "eu", "na": "na1",
     }
-    region_routing: dict[str, str] = {
+    region_routing: Dict[str, str] = {
         "kr": "asia", "ap": "asia", "eu": "europe", "na": "americas",
     }
 
@@ -39,10 +42,16 @@ class Settings(BaseSettings):
     weight_trust: float = 0.15
 
     # ML ensemble
-    ml_model_names: list[str] = [
+    ml_model_names: List[str] = [
         "Random Forest", "XGBoost", "LSTM (시계열)", "Isolation Forest", "k-NN",
     ]
-    ml_model_scales: list[float] = [0.97, 0.94, 0.91, 0.88, 0.95]
+    ml_model_scales: List[float] = [0.97, 0.94, 0.91, 0.88, 0.95]
+    ml_logit_bias: float = -0.45
+
+    # Evidence confidence calibration
+    confidence_full_sample: int = 10
+    confidence_min: int = 35
+    confidence_max: int = 95
 
     # Trust score
     trust_games_to_max_base: int = 150
