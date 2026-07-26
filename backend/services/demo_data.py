@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from backend.models.analysis import (
     AnalysisResult, Flag, MatchRecord, MLVote,
     PlayerStats, SubsystemScores, Verdict,
@@ -6,6 +8,7 @@ from backend.models.analysis import (
 DEMO_PLAYERS: dict[str, AnalysisResult] = {
     "shadowx#kr1": AnalysisResult(
         name="ShadowX", tag="KR1", rank="Radiant #312", region="kr",
+        confidence=94, evidence_quality="aggregate",
         suspicion_pct=91, verdict=Verdict.CHEATER, demo=True,
         stats=PlayerStats(avg_hs_pct=94.0, avg_kda=8.4, avg_adr=312, win_rate=71.0, games_analyzed=10),
         subsystems=SubsystemScores(stat_anomaly=88, physics=96, ml_ensemble=93, trust_score=14),
@@ -35,6 +38,7 @@ DEMO_PLAYERS: dict[str, AnalysisResult] = {
     ),
     "progamer#kr2": AnalysisResult(
         name="ProGamer", tag="KR2", rank="Immortal 3 #88", region="kr",
+        confidence=91, evidence_quality="aggregate",
         suspicion_pct=29, verdict=Verdict.CLEAN, demo=True,
         stats=PlayerStats(avg_hs_pct=47.0, avg_kda=2.1, avg_adr=168, win_rate=54.0, games_analyzed=10),
         subsystems=SubsystemScores(stat_anomaly=28, physics=22, ml_ensemble=31, trust_score=78),
@@ -61,6 +65,7 @@ DEMO_PLAYERS: dict[str, AnalysisResult] = {
     ),
     "snipegod#kr3": AnalysisResult(
         name="SnipeGod", tag="KR3", rank="Diamond 1 #241", region="kr",
+        confidence=72, evidence_quality="limited",
         suspicion_pct=67, verdict=Verdict.SUSPECT, demo=True,
         stats=PlayerStats(avg_hs_pct=73.0, avg_kda=4.1, avg_adr=241, win_rate=63.0, games_analyzed=10),
         subsystems=SubsystemScores(stat_anomaly=72, physics=58, ml_ensemble=64, trust_score=51),

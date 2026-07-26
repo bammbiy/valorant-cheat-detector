@@ -4,6 +4,7 @@ import pytest
 from backend.services.detection import (
     MatchData,
     compute_final,
+    compute_evidence_confidence,
     compute_trust,
     run_ml_ensemble,
     run_physics_check,
@@ -132,6 +133,20 @@ class TestComputeTrust:
             for n in [1, 10, 200]:
                 t = compute_trust([_match(hs=hs) for _ in range(n)])
                 assert 5 <= t <= 95
+
+
+class TestEvidenceConfidence:
+    def test_more_matches_and_agreement_raise_confidence(self):
+        small = [_match(hs=0.50, kda=1.5)]
+        large = [_match(hs=0.50, kda=1.5) for _ in range(10)]
+        low = compute_evidence_confidence(small, 0.1, 0.8, 0.2)
+        high = compute_evidence_confidence(large, 0.4, 0.42, 0.41)
+        assert high > low
+
+    def test_confidence_stays_in_calibrated_range(self):
+        matches = [_match(hs=0.95, kda=8.0) for _ in range(20)]
+        score = compute_evidence_confidence(matches, 1.0, 1.0, 1.0)
+        assert 35 <= score <= 95
 
 
 # ── compute_final ─────────────────────────────────────────────────────────────

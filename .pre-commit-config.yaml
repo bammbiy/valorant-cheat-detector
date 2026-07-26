@@ -1,0 +1,50 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements      # print() → logging 미이행 차단
+      - id: detect-private-key    # API 키 하드코딩 차단
+
+  - repo: local
+    hooks:
+      - id: no-todo-commits
+        name: TODO 주석 커밋 차단
+        entry: python scripts/hooks/check_todos.py
+        language: python
+        types: [python]
+        pass_filenames: true
+
+      - id: no-demo-import
+        name: demo_data 직접 import 차단
+        entry: python scripts/hooks/check_demo_import.py
+        language: python
+        types: [python]
+        pass_filenames: true
+
+      - id: function-length
+        name: 함수 50줄 초과 차단
+        entry: python scripts/hooks/check_function_length.py
+        language: python
+        types: [python]
+        pass_filenames: true
+
+      - id: no-magic-numbers
+        name: 탐지 임계값 매직 넘버 차단 (detection.py)
+        entry: python scripts/hooks/check_magic_numbers.py
+        language: python
+        types: [python]
+        pass_filenames: true

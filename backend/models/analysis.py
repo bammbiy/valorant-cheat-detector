@@ -1,4 +1,8 @@
-from pydantic import BaseModel
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import BaseModel, Field
 from enum import Enum
 
 
@@ -6,6 +10,11 @@ class Verdict(str, Enum):
     CLEAN = "clean"
     SUSPECT = "suspect"
     CHEATER = "cheater"
+
+
+class GameId(str, Enum):
+    VALORANT = "valorant"
+    OVERWATCH = "overwatch"
 
 
 class Flag(BaseModel):
@@ -54,9 +63,14 @@ class AnalysisResult(BaseModel):
     verdict: Verdict
     stats: PlayerStats
     subsystems: SubsystemScores
-    flags: list[Flag]
-    ml_votes: list[MLVote]
-    matches: list[MatchRecord]
-    hs_history: list[float]
-    suspicion_history: list[int]
+    flags: List[Flag]
+    ml_votes: List[MLVote]
+    matches: List[MatchRecord]
+    hs_history: List[float]
+    suspicion_history: List[int]
+    game: GameId = GameId.VALORANT
+    data_source: str = "riot_api"
+    confidence: int = 50
+    evidence_quality: str = "limited"
+    limitations: List[str] = Field(default_factory=list)
     demo: bool = False

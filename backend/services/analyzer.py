@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 
@@ -13,9 +15,11 @@ from backend.services.detection import (
     compute_final,
     compute_trust,
     run_ml_ensemble,
+    compute_evidence_confidence,
     run_physics_check,
     run_stat_anomaly,
 )
+from backend.services.alerts import record_analysis_alert
 from backend.services.demo_data import DEMO_PLAYERS
 from backend.services.riot_client import RiotClient
 
@@ -109,6 +113,7 @@ async def analyze_player(name: str, tag: str, region: str) -> AnalysisResult:
         key = f"{name}#{tag}".lower()
         result = DEMO_PLAYERS.get(key) or next(iter(DEMO_PLAYERS.values()))
         log.info("demo 데이터 반환: %s", key)
+        record_analysis_alert(result)
         return result
 
     platform = cfg.region_platform.get(region)
@@ -134,6 +139,9 @@ async def analyze_player(name: str, tag: str, region: str) -> AnalysisResult:
     ml_score, votes = run_ml_ensemble(raw_matches)
     trust          = compute_trust(raw_matches)
     susp           = compute_final(stat_r.score, phys_r.score, ml_score, trust)
+    confidence     = compute_evidence_confidence(
+        raw_matches, stat_r.score, phys_r.score, ml_score
+    )
 
     # per-match suspicion (independent single-match analysis)
     match_records: list[MatchRecord] = []
@@ -150,7 +158,7 @@ async def analyze_player(name: str, tag: str, region: str) -> AnalysisResult:
     avg_adr = int(sum(m.adr for m in raw_matches) / total)
     wins    = sum(1 for m in raw_matches if m.won)
 
-    return AnalysisResult(
+    result = AnalysisResult(
         name=name,
         tag=tag,
         rank="—",
@@ -175,4 +183,9 @@ async def analyze_player(name: str, tag: str, region: str) -> AnalysisResult:
         matches=match_records[:5],
         hs_history=[round(m.hs * 100, 1) for m in raw_matches],
         suspicion_history=[r.suspicion for r in match_records],
+        confidence=confidence,
+        evidence_quality="aggregate" if len(raw_matches) >= 5 else "limited",
+        limitations=["공개 API 집계 데이터만 사용하며 게임 메모리·원시 에임 텔레메트리는 수집하지 않습니다."],
     )
+    record_analysis_alert(result)
+    return result
